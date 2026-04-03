@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom styles -->
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .pulse-slow {
+            animation: pulse-slow 3s ease-in-out infinite;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .health-excellent { background: linear-gradient(135deg, #10b981, #059669); }
+        .health-good { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .health-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .health-critical { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <!-- Header -->
+    <header class="glass-effect shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg">
+                        <i class="fas fa-warehouse text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Inventory Dashboard</h1>
+                        <p class="text-sm text-gray-600">Real-time inventory insights</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Last Updated</p>
+                        <p id="lastUpdated" class="text-lg font-semibold text-gray-900">--</p>
+                    </div>
+                    <button onclick="refreshData()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-gray-600">Loading inventory data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <i class="fas fa-exclamation-triangle text-red-600 text-4xl mb-4"></i>
+                <h3 class="text-lg font-semibold text-red-800 mb-2">Unable to Load Data</h3>
+                <p class="text-red-600 mb-4" id="errorMessage">Please check your API configuration.</p>
+                <button onclick="refreshData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-redo mr-2"></i>Try Again
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="hidden space-y-6">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Total Items Card -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Items</p>
+                            <p id="totalItems" class="text-3xl font-bold text-gray-900 mt-2">--</p>
+                        </div>
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-lg">
+                            <i class="fas fa-boxes text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Card -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
+                            <p id="lowStockCount" class="text-3xl font-bold text-orange-600 mt-2">--</p>
+                        </div>
+                        <div class="bg-orange-100 text-orange-600 p-3 rounded-lg">
+                            <i class="fas fa-exclamation-triangle text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Critical Items Card -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Critical Risk</p>
+                            <p id="criticalCount" class="text-3xl font-bold text-red-600 mt-2">--</p>
+                        </div>
+                        <div class="bg-red-100 text-red-600 p-3 rounded-lg pulse-slow">
+                            <i class="fas fa-fire text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health Score Card -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Health Score</p>
+                            <p id="healthScore" class="text-3xl font-bold text-green-600 mt-2">--</p>
+                        </div>
+                        <div id="healthIcon" class="bg-green-100 text-green-600 p-3 rounded-lg">
+                            <i class="fas fa-heart text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Stock Levels Chart -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Stock Levels Overview</h3>
+                    <div class="chart-container">
+                        <canvas id="stockLevelsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Sellers Chart -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Sellers (Last 7 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="topSellersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Alerts Table -->
+            <div class="glass-effect rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Low Stock Alerts</h3>
+                    <span id="lowStockBadge" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                        -- items
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reorder Level</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Urgency</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lowStockTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Business Insights -->
+            <div class="glass-effect rounded-xl p-6 shadow-lg">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Business Insights</h3>
+                <div id="insightsContainer" class="space-y-3">
+                    <!-- Insights will be populated here -->
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="glass-effect rounded-xl p-6 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Recent Reports</h3>
+                    <button onclick="loadMoreReports()" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        Load More
+                    </button>
+                </div>
+                <div id="reportsContainer" class="space-y-3">
+                    <!-- Reports will be populated here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p class="text-gray-400">AWS Inventory Management Agent - Built with Free Tier Services</p>
+                <p class="text-gray-500 text-sm mt-2">Real-time inventory insights powered by AWS Lambda & DynamoDB</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Configuration
+        const API_ENDPOINT = 'YOUR_API_GATEWAY_ENDPOINT'; // Replace with your API Gateway URL
+        const AWS_REGION = 'us-east-1';
+        
+        // Global variables
+        let charts = {};
+        let currentData = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+        });
+
+        // Refresh data
+        async function refreshData() {
+            showLoading();
+            try {
+                const data = await fetchInventoryData();
+                currentData = data;
+                updateDashboard(data);
+                hideLoading();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Fetch inventory data from API
+        async function fetchInventoryData() {
+            // For demo purposes, return mock data
+            // In production, this would call your API Gateway endpoint
+            
+            return {
+                summary_metrics: {
+                    total_items: 0,
+                    low_stock_count: 0,
+                    critical_stockout_count: 0,
+                    inventory_health_score: 0
+                },
+                low_stock_items: [
+                    { item_name: 'Graphics Tablet', stock_level: 0, reorder_level: 2, urgency: 'CRITICAL' },
+                    { item_name: 'Gaming Laptop RTX', stock_level: 2, reorder_level: 5, urgency: 'CRITICAL' },
+                    { item_name: 'Mechanical Keyboard RGB', stock_level: 5, reorder_level: 15, urgency: 'HIGH' },
+                    { item_name: 'Noise-Cancelling Headphones', stock_level: 1, reorder_level: 8, urgency: 'CRITICAL' },
+                    { item_name: 'External SSD 2TB', stock_level: 10, reorder_level: 12, urgency: 'HIGH' }
+                ],
+                top_sellers: [
+                    { item_name: 'HDMI Cable 4K 3m', sold_last_week: 30 },
+                    { item_name: 'Fast Phone Charger 45W', sold_last_week: 22 },
+                    { item_name: 'Bluetooth Speaker', sold_last_week: 16 },
+                    { item_name: 'Wireless Earbuds', sold_last_week: 28 },
+                    { item_name: 'USB-C Hub 10-Port', sold_last_week: 12 }
+                ],
+                business_insights: [
+                    '⚠️ 17.8% of inventory is below reorder level - consider reviewing ordering patterns',
+                    '🏆 Top performer: HDMI Cable 4K 3m with 30 units sold this week',
+                    '💀 8.9% of items had zero sales - consider discontinuing or promoting',
+                    '📊 Weekly inventory turnover rate: 0.64'
+                ],
+                recent_reports: [
+                    { report_id: 'report-001', processed_at: '2024-01-15T10:30:00Z', total_items: 45, low_stock_count: 8 },
+                    { report_id: 'report-002', processed_at: '2024-01-14T15:45:00Z', total_items: 43, low_stock_count: 6 },
+                    { report_id: 'report-003', processed_at: '2024-01-13T09:15:00Z', total_items: 44, low_stock_count: 7 }
+                ]
+            };
+        }
+
+        // Update dashboard with data
+        function updateDashboard(data) {
+            // Update KPI cards
+            updateKPICards(data.summary_metrics);
+            
+            // Update charts
+            updateCharts(data);
+            
+            // Update low stock table
+            updateLowStockTable(data.low_stock_items);
+            
+            // Update insights
+            updateInsights(data.business_insights);
+            
+            // Update recent reports
+            updateRecentReports(data.recent_reports);
+            
+            // Update last updated time
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Update KPI cards
+        function updateKPICards(metrics) {
+            document.getElementById('totalItems').textContent = metrics.total_items;
+            document.getElementById('lowStockCount').textContent = metrics.low_stock_count;
+            document.getElementById('criticalCount').textContent = metrics.critical_stockout_count;
+            document.getElementById('healthScore').textContent = metrics.inventory_health_score.toFixed(1);
+            
+            // Update health score color and icon
+            const healthScore = metrics.inventory_health_score;
+            const healthIcon = document.getElementById('healthIcon');
+            const healthScoreElement = document.getElementById('healthScore');
+            
+            if (healthScore >= 80) {
+                healthIcon.className = 'bg-green-100 text-green-600 p-3 rounded-lg';
+                healthScoreElement.className = 'text-3xl font-bold text-green-600 mt-2';
+            } else if (healthScore >= 60) {
+                healthIcon.className = 'bg-blue-100 text-blue-600 p-3 rounded-lg';
+                healthScoreElement.className = 'text-3xl font-bold text-blue-600 mt-2';
+            } else if (healthScore >= 40) {
+                healthIcon.className = 'bg-orange-100 text-orange-600 p-3 rounded-lg';
+                healthScoreElement.className = 'text-3xl font-bold text-orange-600 mt-2';
+            } else {
+                healthIcon.className = 'bg-red-100 text-red-600 p-3 rounded-lg pulse-slow';
+                healthScoreElement.className = 'text-3xl font-bold text-red-600 mt-2';
+            }
+        }
+
+        // Update charts
+        function updateCharts(data) {
+            // Stock Levels Chart
+            updateStockLevelsChart(data.low_stock_items);
+            
+            // Top Sellers Chart
+            updateTopSellersChart(data.top_sellers);
+        }
+
+        // Update stock levels chart
+        function updateStockLevelsChart(lowStockItems) {
+            const ctx = document.getElementById('stockLevelsChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (charts.stockLevels) {
+                charts.stockLevels.destroy();
+            }
+            
+            charts.stockLevels = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: lowStockItems.map(item => item.item_name),
+                    datasets: [{
+                        label: 'Current Stock',
+                        data: lowStockItems.map(item => item.stock_level),
+                        backgroundColor: lowStockItems.map(item => 
+                            item.urgency === 'CRITICAL' ? 'rgba(239, 68, 68, 0.8)' :
+                            item.urgency === 'HIGH' ? 'rgba(245, 158, 11, 0.8)' :
+                            'rgba(59, 130, 246, 0.8)'
+                        ),
+                        borderColor: lowStockItems.map(item => 
+                            item.urgency === 'CRITICAL' ? 'rgba(239, 68, 68, 1)' :
+                            item.urgency === 'HIGH' ? 'rgba(245, 158, 11, 1)' :
+                            'rgba(59, 130, 246, 1)'
+                        ),
+                        borderWidth: 1
+                    }, {
+                        label: 'Reorder Level',
+                        data: lowStockItems.map(item => item.reorder_level),
+                        backgroundColor: 'rgba(156, 163, 175, 0.3)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update top sellers chart
+        function updateTopSellersChart(topSellers) {
+            const ctx = document.getElementById('topSellersChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (charts.topSellers) {
+                charts.topSellers.destroy();
+            }
+            
+            charts.topSellers = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topSellers.map(item => item.item_name),
+                    datasets: [{
+                        data: topSellers.map(item => item.sold_last_week),
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(139, 92, 246, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(139, 92, 246, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update low stock table
+        function updateLowStockTable(lowStockItems) {
+            const tableBody = document.getElementById('lowStockTable');
+            const badge = document.getElementById('lowStockBadge');
+            
+            badge.textContent = `${lowStockItems.length} items`;
+            
+            tableBody.innerHTML = lowStockItems.map(item => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${item.item_name}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="${item.stock_level === 0 ? 'text-red-600 font-bold' : ''}">${item.stock_level}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.reorder_level}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            item.urgency === 'CRITICAL' ? 'bg-red-100 text-red-800' :
+                            item.urgency === 'HIGH' ? 'bg-orange-100 text-orange-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }">
+                            ${item.urgency}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900" onclick="viewItemDetails('${item.item_name}')">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Update insights
+        function updateInsights(insights) {
+            const container = document.getElementById('insightsContainer');
+            
+            container.innerHTML = insights.map(insight => `
+                <div class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <i class="fas fa-lightbulb text-blue-600 mt-1"></i>
+                    <p class="text-sm text-gray-700">${insight}</p>
+                </div>
+            `).join('');
+        }
+
+        // Update recent reports
+        function updateRecentReports(reports) {
+            const container = document.getElementById('reportsContainer');
+            
+            container.innerHTML = reports.map(report => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Report ${report.report_id}</p>
+                        <p class="text-xs text-gray-500">
+                            ${new Date(report.processed_at).toLocaleString()} - 
+                            ${report.total_items} items, ${report.low_stock_count} low stock
+                        </p>
+                    </div>
+                    <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        View Report
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // View item details (placeholder function)
+        function viewItemDetails(itemName) {
+            alert(`Viewing details for: ${itemName}\n\nIn a real implementation, this would open a detailed view or modal.`);
+        }
+
+        // Load more reports (placeholder function)
+        function loadMoreReports() {
+            alert('Loading more reports...\n\nIn a real implementation, this would fetch additional reports from the API.');
+        }
+
+        // UI State Management
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('dashboardContent').classList.add('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>

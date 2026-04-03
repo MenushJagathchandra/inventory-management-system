@@ -1,0 +1,41 @@
+item_id,item_name,stock_level,sold_last_week,reorder_level
+201,Wireless Mouse Pro,15,18,20
+202,Mechanical Keyboard RGB,5,22,15
+203,34" Curved Monitor,8,5,8
+204,Gaming Laptop RTX,2,9,5
+205,USB-C Hub 10-Port,35,12,25
+206,4K Webcam,12,6,10
+207,Noise-Cancelling Headphones,1,25,8
+208,External SSD 2TB,10,8,12
+209,Adjustable Laptop Stand,22,4,15
+210,HDMI Cable 4K 3m,40,30,35
+211,LED Desk Lamp,4,2,5
+212,Fast Phone Charger 45W,38,22,30
+213,Gaming Mouse Pad XL,18,5,20
+214,Studio Microphone XLR,3,11,8
+215,Dual Monitor Arm,2,4,5
+216,USB Flash Drive 128GB,45,18,40
+217,MagSafe Wireless Charger,20,12,20
+218,Cat7 Ethernet Cable 10m,28,20,25
+219,Drawing Tablet Pro,0,4,3
+220,Executive Desk Set,15,2,12
+221,Portable SSD 500GB,25,14,18
+222,Bluetooth Speaker,8,16,10
+223,Smart Display,6,3,5
+224,Wireless Earbuds,12,28,15
+225,USB-C Docking Station,7,9,8
+226,Gaming Chair,3,1,2
+227,Desk Mat Premium,30,6,25
+228,Cable Management Kit,50,8,40
+229,Monitor Light Bar,9,4,8
+230,Laptop Cooling Pad,18,7,15
+231,Smart Keyboard,4,10,6
+232,Wireless Trackball,6,3,5
+233,Graphics Tablet Medium,2,6,4
+234,USB Hub Powered,22,11,18
+235,Webcam Ring Light,5,9,7
+236,External HDD 4TB,14,4,12
+237,Gaming Mouse Wired,20,19,16
+238,Mechanical Keyboard TKL,3,15,8
+239,Portable Monitor 15",1,7,3
+240,Desk Grommet Hub,8,5,7

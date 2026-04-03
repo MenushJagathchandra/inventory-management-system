@@ -1,0 +1,21 @@
+item_id,item_name,stock_level,sold_last_week,reorder_level
+101,Wireless Mouse,25,15,20
+102,Mechanical Keyboard,8,12,15
+103,27" Monitor,12,3,8
+104,Gaming Laptop,3,7,5
+105,USB-C Hub,40,8,15
+106,Webcam HD,18,4,10
+107,Bluetooth Headphones,2,20,10
+108,External SSD 1TB,15,6,12
+109,Laptop Stand,30,2,10
+110,HDMI Cable 2m,50,25,30
+111,Desk Lamp,7,1,5
+112,Phone Charger,45,18,25
+113,Mouse Pad XXL,22,3,15
+114,Microphone USB,5,8,8
+115,Monitor Arm,4,2,3
+116,USB Flash Drive 64GB,60,12,40
+117,Wireless Charger,28,9,20
+118,Ethernet Cable 5m,35,15,25
+119,Graphics Tablet,1,3,2
+120,Desk Organizer,19,1,10
